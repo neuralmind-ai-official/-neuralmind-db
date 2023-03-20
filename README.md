@@ -34,7 +34,7 @@ const query = await test.query("Which products are expensive?"); // A query (In 
 console.log(await test.run(query));
 ```
 
-### Customize it with your own behavior
+### Customize it with your own design
 
 ```js
 (async () => {
