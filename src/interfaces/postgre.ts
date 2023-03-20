@@ -1,5 +1,4 @@
-
-export default interface DatabaseConfig{
+export default interface DatabaseConfig {
     database: string;
     username: string;
     password: string;
