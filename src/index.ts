@@ -1,3 +1,4 @@
+import { getDBByAPIKey, dbQuery } from "./apis/neuralmind";
 import connectMySQL from "./connect/mysql";
 import mysql from "./interfaces/mysql";
 import connectPostgre from "./connect/postgre";
@@ -56,9 +57,10 @@ export default class NeuralmindDB {
     }
   }
 
-  async generateDBSchema() {
+  async generateDBSchema(tables = []) {
+    if(tables.length === 0) tables = await this.tables();
     if (this.db === "mysql") {
-      const tables = await this.tables();
+      
       let schemas: string = "";
       for (let index = 0; index < tables.length; index++) {
         const table = tables[index];
@@ -70,7 +72,6 @@ export default class NeuralmindDB {
       }
       return schemas;
     } else if (this.db === "postgres") {
-      const tables = await this.tables();
       let schemas: string = "";
       for (let index = 0; index < tables.length; index++) {
         const table = tables[index];
@@ -86,6 +87,61 @@ export default class NeuralmindDB {
     } else {
       console.error("Invalid database type.");
       return "";
+    }
+  }
+
+  async run(query: string) {
+    try {
+      if (this.db === "mysql") {
+        const [result, metaData] = await this.dbFunc.query(query);
+
+        return result;
+      }
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
+  /**
+   *
+   * @param tables default empty array, and it will get all the table schema from the database
+   * @param rules default empty array, and it will make sure every request satisfy some needs
+   * @returns Boolean tells if the opperation is succcessfull or not
+   */
+  async sync(tables = [], rules = []) {
+    try {
+      const schemas =
+        tables.length > 0
+          ? await this.generateDBSchema(tables)
+          : await this.generateDBSchema();
+
+      const response: any = await getDBByAPIKey(this.apiKey, {
+        schemas,
+        rules,
+      });
+
+      //response.result contain the updated object
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
+  /**
+   *
+   * @param query End user query
+   * @returns { string / false}
+   */
+  async query(query: string) {
+    try {
+      const response: any = await dbQuery({ query, api_key: this.apiKey });
+      if (!response.response) return false;
+      return response.response;
+    } catch (error) {
+      console.log(error);
+      return false;
     }
   }
 }
