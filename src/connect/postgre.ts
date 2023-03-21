@@ -3,14 +3,14 @@ import postgre from "../interfaces/postgre";
 
 const connectPostgre = async (payload: postgre) => {
   try {
-    const sequelize = new Sequelize(            //instance of sequelize
+    const sequelize = new Sequelize( //instance of sequelize
       payload.database,
       payload.username,
       payload.password,
       {
         host: payload.host,
         port: payload.port,
-        dialect: 'postgres',
+        dialect: "postgres",
         logging: false,
       }
     );
@@ -19,6 +19,7 @@ const connectPostgre = async (payload: postgre) => {
 
     return sequelize;
   } catch (error) {
+    console.log(error);
     return false;
   }
 };
