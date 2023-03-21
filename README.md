@@ -2,13 +2,13 @@
 
 Neuralmind DB connector converts your natural language text queries into SQL and other machine readable code.
 
-![](neuralmind-db-npm.gif)
-
 # Installation
 
 `npm i neuralmind-db`
 
 # Getting your API Key
+
+![](generate-db-api-key.png)
 
 You can get your API key by going to [https://app.neuralmind.io/admin/api](https://app.neuralmind.io/admin/api) and generate a new one.
 
@@ -100,7 +100,7 @@ console.log(await test.run(query));
 
 ```js
 (async () => {
-  const test = new NeuralmindDB("mysql", "your-api-key", {
+  const test = new NeuralmindDB("postgres", "your-api-key", {
     database: "twitter_test",
     username: "root",
     password: "Current-Root-Password",
