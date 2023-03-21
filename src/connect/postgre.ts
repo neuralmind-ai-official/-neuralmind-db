@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize";
-import mysql from "../interfaces/mysql";
+import postgre from "../interfaces/postgre";
 
-const connectMySQL = async (payload: mysql) => {
+const connectPostgre = async (payload: postgre) => {
   try {
     const sequelize = new Sequelize(            //instance of sequelize
       payload.database,
@@ -10,7 +10,7 @@ const connectMySQL = async (payload: mysql) => {
       {
         host: payload.host,
         port: payload.port,
-        dialect: "mysql",
+        dialect: 'postgres',
         logging: false,
       }
     );
@@ -23,4 +23,4 @@ const connectMySQL = async (payload: mysql) => {
   }
 };
 
-export default connectMySQL;
+export default connectPostgre;
