@@ -6,12 +6,6 @@ Neuralmind DB connector converts your natural language text queries into SQL and
 
 `npm i neuralmind-db`
 
-# Getting your API Key
-
-![](generate-db-api-key.png)
-
-You can get your API key by going to [https://app.neuralmind.io/admin/api](https://app.neuralmind.io/admin/api) and generate a new one.
-
 # Usage
 
 ## Starting point (Create a folder and navigate to it in your terminal)
@@ -20,6 +14,16 @@ You can get your API key by going to [https://app.neuralmind.io/admin/api](https
 npm init -y
 npm i neuralmind-db
 ```
+
+Create `index.js` file in the root directory of the project.
+
+# Getting your API Key
+
+![](generate-db-api-key.png)
+
+You can get your API key by going to [https://app.neuralmind.io/admin/api](https://app.neuralmind.io/admin/api) and generate a new one.
+
+Type one of the following codes in your index.js file then run `node index.js`
 
 ## MySQL
 
