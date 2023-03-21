@@ -28,7 +28,7 @@ Type one of the following codes in your index.js file then run `node index.js`
 ## MySQL
 
 ```js
-import NeuralmindDB from "@neuralmind/db-connector";
+const NeuralmindDB = require("neuralmind-db");
 
 const test = new NeuralmindDB("mysql", "your-api-key", {
   database: "store",
@@ -83,7 +83,7 @@ console.log(await test.run(query));
 ## Postgres
 
 ```js
-import NeuralmindDB from "@neuralmind/db-connector";
+const NeuralmindDB = require("neuralmind-db");
 
 const test = new NeuralmindDB("postgres", "your-api-key", {
   database: "store",
