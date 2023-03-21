@@ -17,6 +17,8 @@ npm i neuralmind-db
 
 Create `index.js` file in the root directory of the project.
 
+Replace `database` `username` `password` `host` `port` with your db config.
+
 # Getting your API Key
 
 ![](generate-db-api-key.png)
@@ -28,7 +30,7 @@ Type one of the following codes in your index.js file then run `node index.js`
 ## MySQL
 
 ```js
-const NeuralmindDB = require("neuralmind-db");
+const NeuralmindDB = require("neuralmind-db").default;
 
 const test = new NeuralmindDB("mysql", "your-api-key", {
   database: "store",
@@ -83,7 +85,7 @@ console.log(await test.run(query));
 ## Postgres
 
 ```js
-const NeuralmindDB = require("neuralmind-db");
+const NeuralmindDB = require("neuralmind-db").default;
 
 const test = new NeuralmindDB("postgres", "your-api-key", {
   database: "store",
