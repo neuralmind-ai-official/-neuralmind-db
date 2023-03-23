@@ -2,7 +2,7 @@ import axios from "axios";
 
 const baseURL = process.env.NEURALMIND_REST
   ? process.env.NEURALMIND_REST
-  : +`https://api.neuralmind.io/`;
+  : `https://api.neuralmind.io/`;
 export const getDBByAPIKey = async (api_key: string, payload) => {
   return new Promise(async (resolve, reject) => {
     try {

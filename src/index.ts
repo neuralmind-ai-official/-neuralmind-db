@@ -28,14 +28,19 @@ export default class NeuralmindDB {
         return;
       }
       this.dbFunc = connectResponse;
+
       return true;
-    }  else if (this.db === "postgres") {
-      const connectResponse: any = await connectPostgre(this.connection as postgre);
+    } else if (this.db === "postgres") {
+      const connectResponse: any = await connectPostgre(
+        this.connection as postgre
+      );
       if (!connectResponse) {
       console.error("Connecting with PostgreSQL server failed.");
       return;
       }
+
       this.dbFunc = connectResponse;
+
       return true;
       } else if (this.db === "mongodb") {
       const connectResponse: any = await connectMongoDB();
@@ -48,8 +53,8 @@ export default class NeuralmindDB {
       } else {
       console.error("Invalid database type.");
       return false;
-      }
-      }
+    }
+  }
 
   
   // Get tables;
@@ -59,8 +64,11 @@ export default class NeuralmindDB {
       const tables = result.map((value: any) => value[Object.keys(value)[0]]);
       return tables;
     } else if (this.db === "postgres") {
-      const result = await this.dbFunc.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';");
+      const result = await this.dbFunc.query(
+        "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';"
+      );
       const tables = result[0].map((value: any) => value.tablename);
+
       return tables;
     } else if (this.db === "mongodb") {
       const collections = await this.dbFunc.listCollections().toArray();
@@ -73,9 +81,8 @@ export default class NeuralmindDB {
   }
 
   async generateDBSchema(tables = []) {
-    if(tables.length === 0) tables = await this.tables();
+    if (tables.length === 0) tables = await this.tables();
     if (this.db === "mysql") {
-      
       let schemas: string = "";
       for (let index = 0; index < tables.length; index++) {
         const table = tables[index];
@@ -90,7 +97,7 @@ export default class NeuralmindDB {
       let schemas: string = "";
       for (let index = 0; index < tables.length; index++) {
         const table = tables[index];
-        const result = await this.dbFunc.query(
+        const [result] = await this.dbFunc.query(
           `SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name='${table}'`
         );
         schemas += `\n\nTable: ${table}\n`;
@@ -98,6 +105,7 @@ export default class NeuralmindDB {
           schemas += `Column: ${row.column_name}, Type: ${row.data_type}\n`;
         }
       }
+
       return schemas;
     }else if (this.db === "mongodb") {
       let schemas: string = "";
@@ -128,7 +136,7 @@ export default class NeuralmindDB {
 
   async run(query: string) {
     try {
-      if (this.db === "mysql") {
+      if (this.db === "mysql" || this.db == "postgres") {
         const [result, metaData] = await this.dbFunc.query(query);
 
         return result;
@@ -190,27 +198,3 @@ export default class NeuralmindDB {
     }
   }
 }
-
-
-
-(async () => {
-  const test = new NeuralmindDB("postgres", "test", {
-    database: "mydatabase",
-    username: "myuser",
-    password: "mypassword",
-    host: "127.0.0.1",
-    port: 5432,
-  });
-
-  await test.connect();
-  const tables = await test.generateDBSchema();
-  console.log(tables);
-})();
-function tables() {
-  throw new Error("Function not implemented.");
-}
-
-function generateDBSchema() {
-  throw new Error("Function not implemented.");
-}
-
