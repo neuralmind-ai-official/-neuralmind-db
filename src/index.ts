@@ -5,6 +5,7 @@ import connectPostgre from "./connect/postgre";
 import postgre from "./interfaces/postgre";
 import mongodb from "./interfaces/mongo";
 import connectMongoDB from "./connect/mongo";
+import { Db } from 'mongodb';
 
 export default class NeuralmindDB {
   db: string = "";
@@ -37,7 +38,7 @@ export default class NeuralmindDB {
       this.dbFunc = connectResponse;
       return true;
       } else if (this.db === "mongodb") {
-      const connectResponse: any = await connectMongoDB(this.connection as mongodb);
+      const connectResponse: any = await connectMongoDB();
       if (!connectResponse) {
       console.error("Connecting with MongoDB server failed.");
       return;
@@ -100,7 +101,7 @@ export default class NeuralmindDB {
       return schemas;
     }else if (this.db === "mongodb") {
       let schemas: string = "";
-      const db = (await getDBByAPIKey(this.apiKey, this.payload)) as mongodb.Db;
+      const db = (await getDBByAPIKey(this.apiKey, this.payload)) as Db;
       for (let index = 0; index < tables.length; index++) {
           const table = tables[index];
           const result = await db.collection(table).find().toArray();
@@ -137,7 +138,7 @@ export default class NeuralmindDB {
         return result.rows;
       }
       else if (this.db === "mongodb") {
-        const db = await getDBByAPIKey(this.apiKey, this.payload);
+        const db = await getDBByAPIKey(this.apiKey, this.payload) as Db;
         const result = await db.command({ raw: query });
         return result.result;
     }
