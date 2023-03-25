@@ -7,12 +7,15 @@ import mongodb from "./interfaces/mongo";
 import connectMongoDB from "./connect/mongo";
 import bigquery from "./interfaces/bigquery";
 import connectBigQuery  from './connect/bigquery';
+import redshift from './interfaces/redshift';
+import connectRedshift from './connect/redshift';
 import { Db } from 'mongodb';
+
 
 export default class NeuralmindDB {
   db: string = "";
   apiKey: string = "";
-  connection: mysql | postgre | mongodb | bigquery;
+  connection: mysql | postgre | mongodb | bigquery |redshift;
   dbFunc: any;
 
   constructor(db: string, apiKey: string, connection: mysql | postgre | bigquery) {
@@ -60,7 +63,17 @@ export default class NeuralmindDB {
         }
         this.dbFunc = connectResponse;
         return true;
-      }else {
+      } else if (this.db === "redshift") {
+        const connectResponse: any = await connectRedshift(
+          this.connection as redshift
+        );
+        if (!connectResponse) {
+          console.error("Connecting with Redshift server failed.");
+          return false;
+        }
+        this.dbFunc = connectResponse;
+        return true;
+      } else {
       console.error("Invalid database type.");
       return false;
     }
@@ -90,7 +103,13 @@ export default class NeuralmindDB {
         );
         const tables = rows.map((value: any) => value.table_name);
         return tables;
-      }  else {
+      } else if (this.db === "redshift") {
+        const [result] = await this.dbFunc.query(
+          "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'"
+        );
+        const tables = result.map((value: any) => value.table_name);
+        return tables;
+      } else {
       console.error("Invalid database type.");
       return [];
     }
@@ -159,8 +178,20 @@ export default class NeuralmindDB {
       }
     }
     return schemas;
-  }
-  else {
+  } else if (this.db === "redshift") {
+    let schemas: string = "";
+    for (let index = 0; index < tables.length; index++) {
+      const table = tables[index];
+      const [result] = await this.dbFunc.query(
+        `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '${table}'`
+      );
+      schemas += `\n\nTable: ${table}\n`;
+      for (const row of result) {
+        schemas += `Column: ${row.column_name}, Type: ${row.data_type}\n`;
+      }
+    }
+    return schemas;
+  } else {
       console.error("Invalid database type.");
       return "";
     }
@@ -191,11 +222,16 @@ export default class NeuralmindDB {
       const [result] = await job.getQueryResults();
       return result;
     }
-      }catch (error) {
+    else if (this.db === "bigquery") {
+      const [job] = await this.dbFunc.createQueryJob({ query });
+      const [result] = await job.getQueryResults();
+      return result;
+    }
+  }catch (error) {
       console.log(error);
       return false;
     }
-  }
+ }
 
   /**
    *
