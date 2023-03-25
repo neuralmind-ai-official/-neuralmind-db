@@ -5,15 +5,17 @@ import connectPostgre from "./connect/postgre";
 import postgre from "./interfaces/postgre";
 import mongodb from "./interfaces/mongo";
 import connectMongoDB from "./connect/mongo";
+import bigquery from "./interfaces/bigquery";
+import connectBigQuery  from './connect/bigquery';
 import { Db } from 'mongodb';
 
 export default class NeuralmindDB {
   db: string = "";
   apiKey: string = "";
-  connection: mysql | postgre | mongodb;
+  connection: mysql | postgre | mongodb | bigquery;
   dbFunc: any;
 
-  constructor(db: string, apiKey: string, connection: mysql | postgre) {
+  constructor(db: string, apiKey: string, connection: mysql | postgre | bigquery) {
     this.db = db;
     this.apiKey = apiKey;
     this.connection = connection;
@@ -50,7 +52,15 @@ export default class NeuralmindDB {
       }
       this.dbFunc = connectResponse.db;
       return true;
-      } else {
+      } else if (this.db === "bigquery") {
+        const connectResponse: any = await connectBigQuery(this.connection as bigquery);
+        if (!connectResponse) {
+          console.error("Connecting with BigQuery server failed.");
+          return false;
+        }
+        this.dbFunc = connectResponse;
+        return true;
+      }else {
       console.error("Invalid database type.");
       return false;
     }
@@ -74,7 +84,13 @@ export default class NeuralmindDB {
       const collections = await this.dbFunc.listCollections().toArray();
       const tables = collections.map((collection: any) => collection.name);
       return tables;
-      }else {
+      } else if (this.db === "bigquery" && "dataset" in this.connection) {
+        const [rows] = await (this.dbFunc as any).query(
+          `SELECT table_name FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type='BASE TABLE'`
+        );
+        const tables = rows.map((value: any) => value.table_name);
+        return tables;
+      }  else {
       console.error("Invalid database type.");
       return [];
     }
@@ -124,7 +140,27 @@ export default class NeuralmindDB {
           }
       }
       return schemas;
-  }else {
+  } else if (this.db === "bigquery" && "dataset" in this.connection) {
+    let schemas: string = "";
+    const [tablesInfo] = await (this.dbFunc as any).query(
+      `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE'`
+    );
+    for (const table of tables) {
+      const tableInfo = tablesInfo.find(
+        (info: any) => info.table_name === table
+      );
+      if (!tableInfo) continue;
+      schemas += `\n\nTable: ${table}\n`;
+      const [columns] = await (this.dbFunc as any).query(
+        `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '${table}'`
+      );
+      for (const column of columns) {
+        schemas += `Column: ${column.column_name}, Type: ${column.data_type}\n`;
+      }
+    }
+    return schemas;
+  }
+  else {
       console.error("Invalid database type.");
       return "";
     }
@@ -149,6 +185,11 @@ export default class NeuralmindDB {
         const db = await getDBByAPIKey(this.apiKey, this.payload) as Db;
         const result = await db.command({ raw: query });
         return result.result;
+    }
+    else if (this.db === "bigquery") {
+      const [job] = await this.dbFunc.createQueryJob({ query });
+      const [result] = await job.getQueryResults();
+      return result;
     }
       }catch (error) {
       console.log(error);
