@@ -1,24 +1,22 @@
-import { Sequelize } from "sequelize";
-import { Sequelize as SequelizeBigQuery } from 'sequelize-bigquery';
-import bigquery from "../interfaces/bigquery";
+import { BigQuery } from '@google-cloud/bigquery';
+import bigquery from '../interfaces/bigquery';
 
 const connectBigQuery = async (payload: bigquery) => {
   try {
-    const sequelize = new SequelizeBigQuery({
-      dialect: 'bigquery',
+    const client = new BigQuery({
       projectId: payload.projectId,
       credentials: {
         client_email: payload.clientEmail,
-        private_key: payload.privateKey
-      }
+        private_key: payload.privateKey,
+      },
     });
 
-    await sequelize.authenticate();
-
-    return sequelize;
+    return client;
   } catch (error) {
+    console.error(error);
     return false;
   }
 };
 
 export default connectBigQuery;
+
