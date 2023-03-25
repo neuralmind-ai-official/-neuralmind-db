@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const neuralmind_1 = require("./apis/neuralmind");
 const mysql_1 = __importDefault(require("./connect/mysql"));
 const postgre_1 = __importDefault(require("./connect/postgre"));
+const mongo_1 = __importDefault(require("./connect/mongo"));
 class NeuralmindDB {
     constructor(db, apiKey, connection) {
         this.db = "";
@@ -44,6 +45,15 @@ class NeuralmindDB {
                 this.dbFunc = connectResponse;
                 return true;
             }
+            else if (this.db === "mongodb") {
+                const connectResponse = yield (0, mongo_1.default)(`mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}/?retryWrites=true&w=majority`, "development");
+                if (!connectResponse) {
+                    console.error("Connecting with MongoDB server failed.");
+                    return;
+                }
+                this.dbFunc = connectResponse;
+                return true;
+            }
             else {
                 console.error("Invalid database type.");
                 return false;
@@ -61,6 +71,11 @@ class NeuralmindDB {
             else if (this.db === "postgres") {
                 const result = yield this.dbFunc.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';");
                 const tables = result[0].map((value) => value.tablename);
+                return tables;
+            }
+            else if (this.db === "mongodb") {
+                const collections = yield this.dbFunc.listCollections().toArray();
+                const tables = collections.map((collection) => collection.name);
                 return tables;
             }
             else {
@@ -96,6 +111,24 @@ class NeuralmindDB {
                 }
                 return schemas;
             }
+            else if (this.db === "mongodb") {
+                let schemas = "";
+                for (let index = 0; index < tables.length; index++) {
+                    const table = tables[index];
+                    const connection = this.dbFunc.collection(table);
+                    const result = yield connection.find().toArray();
+                    schemas += `\n\nTable: ${table}\n`;
+                    if (result.length === 0) {
+                        schemas += `No data found in table ${table}\n`;
+                        continue;
+                    }
+                    const schemaKeys = Object.keys(result[0]);
+                    for (const key of schemaKeys) {
+                        schemas += `Column: ${key}, Type: ${typeof result[0][key]}\n`;
+                    }
+                }
+                return schemas;
+            }
             else {
                 console.error("Invalid database type.");
                 return "";
@@ -107,6 +140,15 @@ class NeuralmindDB {
             try {
                 if (this.db === "mysql" || this.db == "postgres") {
                     const [result, metaData] = yield this.dbFunc.query(query);
+                    return result;
+                }
+                else if (this.db === "postgresql") {
+                    const result = yield this.dbFunc.query(query);
+                    return result.rows;
+                }
+                else if (this.db === "mongodb") {
+                    const collection = query.split("db.")[1].split(".find")[0];
+                    const result = yield eval(`this.dbFunc.collection('${collection}').find${query.split("db.")[1].split(".find")[1]}`).toArray();
                     return result;
                 }
             }
@@ -149,7 +191,11 @@ class NeuralmindDB {
     query(query) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const response = yield (0, neuralmind_1.dbQuery)({ query, api_key: this.apiKey });
+                const response = yield (0, neuralmind_1.dbQuery)({
+                    query,
+                    api_key: this.apiKey,
+                    db_type: "NoSQL",
+                });
                 if (!response.response)
                     return false;
                 return response.response;

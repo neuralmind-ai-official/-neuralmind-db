@@ -9,23 +9,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const sequelize_1 = require("sequelize");
-const connectPostgre = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+const mongodb_1 = require("mongodb");
+const main = (connectionString, dbName) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const sequelize = new sequelize_1.Sequelize(//instance of sequelize
-        payload.database, payload.username, payload.password, {
-            host: payload.host,
-            port: payload.port,
-            dialect: "postgres",
-            logging: false,
-        });
-        yield sequelize.authenticate();
-        return sequelize;
+        const client = new mongodb_1.MongoClient(connectionString);
+        const database = client.db(dbName);
+        return database;
     }
     catch (error) {
         console.log(error);
-        return false;
     }
 });
-exports.default = connectPostgre;
-//# sourceMappingURL=postgre.js.map
+exports.default = main;
+//# sourceMappingURL=mongo.js.map
