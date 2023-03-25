@@ -1,27 +1,10 @@
-// The Sequelize ORM is primarily designed for working with relational databases, whereas MongoDB is a NoSQL document-oriented database. 
-// As a result, using Sequelize with MongoDB is not recommended. Instead, you can use a MongoDB-specific ORM like Mongoose to work with MongoDB.
+import { MongoClient } from "mongodb";
 
-import mongodb from '../interfaces/mongo';
-import { connect, disconnect, Schema, model } from 'mongoose';
-
-const mySchema = new Schema({
-  // define your schema here
-});
-
-const MyModel = model('MyModel', mySchema);
-
-const main = async () => {
+const main = async (connectionString, dbName) => {
   try {
-    await connect(process.env.mongodb);
-    console.log('MongoDB Connected!');
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const Mydisconnect = async () => {
-  try {
-    await disconnect();
+    const client = new MongoClient(connectionString);
+    const database = client.db(dbName);
+    return database;
   } catch (error) {
     console.log(error);
   }

@@ -5,7 +5,6 @@ import connectPostgre from "./connect/postgre";
 import postgre from "./interfaces/postgre";
 import mongodb from "./interfaces/mongo";
 import connectMongoDB from "./connect/mongo";
-import { Db } from 'mongodb';
 
 export default class NeuralmindDB {
   db: string = "";
@@ -35,28 +34,31 @@ export default class NeuralmindDB {
         this.connection as postgre
       );
       if (!connectResponse) {
-      console.error("Connecting with PostgreSQL server failed.");
-      return;
+        console.error("Connecting with PostgreSQL server failed.");
+        return;
       }
 
       this.dbFunc = connectResponse;
 
       return true;
-      } else if (this.db === "mongodb") {
-      const connectResponse: any = await connectMongoDB();
+    } else if (this.db === "mongodb") {
+      const connectResponse: any = await connectMongoDB(
+        `mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}/?retryWrites=true&w=majority`,
+        "development"
+      );
       if (!connectResponse) {
-      console.error("Connecting with MongoDB server failed.");
-      return;
+        console.error("Connecting with MongoDB server failed.");
+        return;
       }
-      this.dbFunc = connectResponse.db;
+
+      this.dbFunc = connectResponse;
       return true;
-      } else {
+    } else {
       console.error("Invalid database type.");
       return false;
     }
   }
 
-  
   // Get tables;
   async tables() {
     if (this.db === "mysql") {
@@ -72,9 +74,10 @@ export default class NeuralmindDB {
       return tables;
     } else if (this.db === "mongodb") {
       const collections = await this.dbFunc.listCollections().toArray();
+
       const tables = collections.map((collection: any) => collection.name);
       return tables;
-      }else {
+    } else {
       console.error("Invalid database type.");
       return [];
     }
@@ -107,31 +110,29 @@ export default class NeuralmindDB {
       }
 
       return schemas;
-    }else if (this.db === "mongodb") {
+    } else if (this.db === "mongodb") {
       let schemas: string = "";
-      const db = (await getDBByAPIKey(this.apiKey, this.payload)) as Db;
+
       for (let index = 0; index < tables.length; index++) {
-          const table = tables[index];
-          const result = await db.collection(table).find().toArray();
-          schemas += `\n\nTable: ${table}\n`;
-          if (result.length === 0) {
-              schemas += `No data found in table ${table}\n`;
-              continue;
-          }
-          const schemaKeys = Object.keys(result[0]);
-          for (const key of schemaKeys) {
-              schemas += `Column: ${key}, Type: ${typeof result[0][key]}\n`;
-          }
+        const table = tables[index];
+        const connection = this.dbFunc.collection(table);
+        const result = await connection.find().toArray();
+        schemas += `\n\nTable: ${table}\n`;
+        if (result.length === 0) {
+          schemas += `No data found in table ${table}\n`;
+          continue;
+        }
+        const schemaKeys = Object.keys(result[0]);
+        for (const key of schemaKeys) {
+          schemas += `Column: ${key}, Type: ${typeof result[0][key]}\n`;
+        }
       }
+
       return schemas;
-  }else {
+    } else {
       console.error("Invalid database type.");
       return "";
     }
-  }
-
-  payload(apiKey: string, payload: any) {
-    throw new Error("Method not implemented.");
   }
 
   async run(query: string) {
@@ -140,17 +141,21 @@ export default class NeuralmindDB {
         const [result, metaData] = await this.dbFunc.query(query);
 
         return result;
-      }
-      else if (this.db === "postgresql") {
+      } else if (this.db === "postgresql") {
         const result = await this.dbFunc.query(query);
         return result.rows;
+      } else if (this.db === "mongodb") {
+        const collection = query.split("db.")[1].split(".find")[0];
+
+        const result = await eval(
+          `this.dbFunc.collection('${collection}').find${
+            query.split("db.")[1].split(".find")[1]
+          }`
+        ).toArray();
+
+        return result;
       }
-      else if (this.db === "mongodb") {
-        const db = await getDBByAPIKey(this.apiKey, this.payload) as Db;
-        const result = await db.command({ raw: query });
-        return result.result;
-    }
-      }catch (error) {
+    } catch (error) {
       console.log(error);
       return false;
     }
@@ -189,7 +194,11 @@ export default class NeuralmindDB {
    */
   async query(query: string) {
     try {
-      const response: any = await dbQuery({ query, api_key: this.apiKey });
+      const response: any = await dbQuery({
+        query,
+        api_key: this.apiKey,
+        db_type: "NoSQL",
+      });
       if (!response.response) return false;
       return response.response;
     } catch (error) {
