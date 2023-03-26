@@ -46,7 +46,7 @@ class NeuralmindDB {
                 return true;
             }
             else if (this.db === "mongodb") {
-                const connectResponse = yield (0, mongo_1.default)(`mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}/?retryWrites=true&w=majority`, "development");
+                const connectResponse = yield (0, mongo_1.default)(`mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}`, this.connection.database);
                 if (!connectResponse) {
                     console.error("Connecting with MongoDB server failed.");
                     return;

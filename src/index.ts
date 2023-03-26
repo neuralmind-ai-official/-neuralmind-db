@@ -43,8 +43,8 @@ export default class NeuralmindDB {
       return true;
     } else if (this.db === "mongodb") {
       const connectResponse: any = await connectMongoDB(
-        `mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}/?retryWrites=true&w=majority`,
-        "development"
+        `mongodb+srv://${this.connection.username}:${this.connection.password}@${this.connection.host}`,
+        this.connection.database
       );
       if (!connectResponse) {
         console.error("Connecting with MongoDB server failed.");
