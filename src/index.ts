@@ -6,9 +6,9 @@ import postgre from "./interfaces/postgre";
 import mongodb from "./interfaces/mongo";
 import connectMongoDB from "./connect/mongo";
 import bigquery from "./interfaces/bigquery";
-import connectBigQuery  from './connect/bigquery';
-import redshift from './interfaces/redshift';
-import connectRedshift from './connect/redshift';
+import connectBigQuery from "./connect/bigquery";
+import redshift from "./interfaces/redshift";
+import connectRedshift from "./connect/redshift";
 import { Db } from "mongodb";
 
 export default class NeuralmindDB {
@@ -62,26 +62,27 @@ export default class NeuralmindDB {
 
       this.dbFunc = connectResponse;
       return true;
-    }
-      } else if (this.db === "bigquery") {
-        const connectResponse: any = await connectBigQuery(this.connection as bigquery);
-        if (!connectResponse) {
-          console.error("Connecting with BigQuery server failed.");
-          return false;
-        }
-        this.dbFunc = connectResponse;
-        return true;
-      } else if (this.db === "redshift") {
-        const connectResponse: any = await connectRedshift(
-          this.connection as redshift
-        );
-        if (!connectResponse) {
-          console.error("Connecting with Redshift server failed.");
-          return false;
-        }
-        this.dbFunc = connectResponse;
-        return true;
-      }  else {
+    } else if (this.db === "bigquery") {
+      const connectResponse: any = await connectBigQuery(
+        this.connection as bigquery
+      );
+      if (!connectResponse) {
+        console.error("Connecting with BigQuery server failed.");
+        return false;
+      }
+      this.dbFunc = connectResponse;
+      return true;
+    } else if (this.db === "redshift") {
+      const connectResponse: any = await connectRedshift(
+        this.connection as redshift
+      );
+      if (!connectResponse) {
+        console.error("Connecting with Redshift server failed.");
+        return false;
+      }
+      this.dbFunc = connectResponse;
+      return true;
+    } else {
       console.error("Invalid database type.");
       return false;
     }
@@ -105,19 +106,19 @@ export default class NeuralmindDB {
 
       const tables = collections.map((collection: any) => collection.name);
       return tables;
-    }  else if (this.db === "bigquery" && "dataset" in this.connection) {
-        const [rows] = await (this.dbFunc as any).query(
-          `SELECT table_name FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type='BASE TABLE'`
-        );
-        const tables = rows.map((value: any) => value.table_name);
-        return tables;
-      } else if (this.db === "redshift") {
-        const [result] = await this.dbFunc.query(
-          "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'"
-        );
-        const tables = result.map((value: any) => value.table_name);
-        return tables;
-      } else {
+    } else if (this.db === "bigquery" && "dataset" in this.connection) {
+      const [rows] = await (this.dbFunc as any).query(
+        `SELECT table_name FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type='BASE TABLE'`
+      );
+      const tables = rows.map((value: any) => value.table_name);
+      return tables;
+    } else if (this.db === "redshift") {
+      const [result] = await this.dbFunc.query(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'"
+      );
+      const tables = result.map((value: any) => value.table_name);
+      return tables;
+    } else {
       console.error("Invalid database type.");
       return [];
     }
@@ -169,39 +170,39 @@ export default class NeuralmindDB {
       }
 
       return schemas;
-    }  else if (this.db === "bigquery" && "dataset" in this.connection) {
-    let schemas: string = "";
-    const [tablesInfo] = await (this.dbFunc as any).query(
-      `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE'`
-    );
-    for (const table of tables) {
-      const tableInfo = tablesInfo.find(
-        (info: any) => info.table_name === table
+    } else if (this.db === "bigquery" && "dataset" in this.connection) {
+      let schemas: string = "";
+      const [tablesInfo] = await (this.dbFunc as any).query(
+        `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.TABLES WHERE table_type = 'BASE TABLE'`
       );
-      if (!tableInfo) continue;
-      schemas += `\n\nTable: ${table}\n`;
-      const [columns] = await (this.dbFunc as any).query(
-        `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '${table}'`
-      );
-      for (const column of columns) {
-        schemas += `Column: ${column.column_name}, Type: ${column.data_type}\n`;
+      for (const table of tables) {
+        const tableInfo = tablesInfo.find(
+          (info: any) => info.table_name === table
+        );
+        if (!tableInfo) continue;
+        schemas += `\n\nTable: ${table}\n`;
+        const [columns] = await (this.dbFunc as any).query(
+          `SELECT * FROM ${this.connection.dataset}.INFORMATION_SCHEMA.COLUMNS WHERE table_name = '${table}'`
+        );
+        for (const column of columns) {
+          schemas += `Column: ${column.column_name}, Type: ${column.data_type}\n`;
+        }
       }
-    }
-    return schemas;
-  } else if (this.db === "redshift") {
-    let schemas: string = "";
-    for (let index = 0; index < tables.length; index++) {
-      const table = tables[index];
-      const [result] = await this.dbFunc.query(
-        `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '${table}'`
-      );
-      schemas += `\n\nTable: ${table}\n`;
-      for (const row of result) {
-        schemas += `Column: ${row.column_name}, Type: ${row.data_type}\n`;
+      return schemas;
+    } else if (this.db === "redshift") {
+      let schemas: string = "";
+      for (let index = 0; index < tables.length; index++) {
+        const table = tables[index];
+        const [result] = await this.dbFunc.query(
+          `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '${table}'`
+        );
+        schemas += `\n\nTable: ${table}\n`;
+        for (const row of result) {
+          schemas += `Column: ${row.column_name}, Type: ${row.data_type}\n`;
+        }
       }
-    }
-    return schemas;
-  } else {
+      return schemas;
+    } else {
       console.error("Invalid database type.");
       return "";
     }
@@ -234,8 +235,7 @@ export default class NeuralmindDB {
         const [job] = await this.dbFunc.createQueryJob({ query });
         const [result] = await job.getQueryResults();
         return result;
-      }
-      else if (this.db === "bigquery") {
+      } else if (this.db === "bigquery") {
         const [job] = await this.dbFunc.createQueryJob({ query });
         const [result] = await job.getQueryResults();
         return result;
