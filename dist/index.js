@@ -194,7 +194,7 @@ class NeuralmindDB {
                 const response = yield (0, neuralmind_1.dbQuery)({
                     query,
                     api_key: this.apiKey,
-                    db_type: "NoSQL",
+                    db_type: this.db === "mongodb" ? "NoSQL" : this.db,
                 });
                 if (!response.response)
                     return false;

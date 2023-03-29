@@ -197,7 +197,7 @@ export default class NeuralmindDB {
       const response: any = await dbQuery({
         query,
         api_key: this.apiKey,
-        db_type: "NoSQL",
+        db_type: this.db === "mongodb" ? "NoSQL" : this.db,
       });
       if (!response.response) return false;
       return response.response;
